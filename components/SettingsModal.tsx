@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Save, RefreshCw, Key, Cpu, Zap, CheckCircle, XCircle } from 'lucide-react';
-import { getSettings, saveSettings, DEFAULT_SETTINGS, TTS_MODEL_OPTIONS, SCRIPT_MODEL_OPTIONS, LIVE_MODEL_OPTIONS } from '../utils/storageUtils';
-import { AppSettings } from '../types';
+import { getSettings, saveSettings, DEFAULT_SETTINGS, TTS_MODEL_OPTIONS, SCRIPT_MODEL_OPTIONS, LIVE_MODEL_OPTIONS } from '../lib/utils/storageUtils'; // Updated import path
+import { AppSettings } from '../lib/types'; // Updated import path
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -32,7 +31,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     }
   }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     // Apply custom model values if "custom" is selected in dropdowns
     const finalSettings = {
       ...settings,
@@ -48,9 +47,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         setHasSaved(false);
         onClose();
     }, 800);
-  };
+  }, [settings, customTtsModel, customScriptModel, customLiveModel, onClose]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (confirm("Reset all settings to default?")) {
         setSettings(DEFAULT_SETTINGS);
         saveSettings(DEFAULT_SETTINGS);
@@ -58,20 +57,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         setCustomScriptModel('');
         setCustomLiveModel('');
     }
-  };
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden animate-scale-in">
         
         {/* Header */}
         <div className="bg-slate-800/50 p-5 border-b border-slate-700 flex justify-between items-center">
           <div className="flex items-center gap-3 text-slate-200">
             <Cpu size={24} className="text-amber-500" aria-hidden="true" />
-            <h3 className="font-bold text-xl">Global Configuration</h3>
+            <h3 id="settings-modal-title" className="font-bold text-xl">Global Configuration</h3>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors" aria-label="Close settings">
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -224,4 +223,4 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   );
 };
 
-export default SettingsModal;
+export default React.memo(SettingsModal);

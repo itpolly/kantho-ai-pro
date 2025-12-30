@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, PhoneOff, Activity, Volume2, User, Bot, Loader2 } from 'lucide-react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { float32ToPcm16, pcm16ToFloat32, encodeBase64, decodeBase64 } from '../utils/audioUtils';
-import { getEffectiveApiKey, getSettings } from '../utils/storageUtils';
+import { float32ToPcm16, pcm16ToFloat32, encodeBase64, decodeBase64 } from '../lib/utils/audioUtils'; // Updated import path
+import { getEffectiveApiKey, getSettings } from '../lib/utils/storageUtils'; // Updated import path
 
 interface LiveInterfaceProps {
   onClose: () => void;
@@ -55,7 +54,38 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
     }
   }, []);
 
-  const connectToLive = async () => {
+  const disconnect = useCallback(() => {
+    if (sessionPromiseRef.current) { // Use sessionPromiseRef
+       sessionPromiseRef.current.then((s: any) => {
+         if (s.close) s.close();
+       }).catch(() => {});
+       sessionPromiseRef.current = null; // Clear the promise reference
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (inputContextRef.current) {
+      inputContextRef.current.close();
+      inputContextRef.current = null;
+    }
+    if (outputContextRef.current) {
+      outputContextRef.current.close();
+      outputContextRef.current = null;
+    }
+    if (audioWorkletNodeRef.current) {
+      audioWorkletNodeRef.current.disconnect();
+      audioWorkletNodeRef.current = null;
+    }
+
+    setIsConnected(false);
+    setStatus('idle');
+    setVolumeLevel(0);
+  }, []);
+
+  const connectToLive = useCallback(async () => {
     setStatus('connecting');
     setErrorDetails("");
     
@@ -160,31 +190,11 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
       setStatus('error');
       setErrorDetails(e.message || "Failed to connect to microphone or GenAI service.");
     }
-  };
-
-  const disconnect = () => {
-    if (sessionPromiseRef.current) { // Use sessionPromiseRef
-       sessionPromiseRef.current.then((s: any) => {
-         if (s.close) s.close();
-       }).catch(() => {});
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-    }
-    
-    if (inputContextRef.current) inputContextRef.current.close();
-    if (outputContextRef.current) outputContextRef.current.close();
-    if (audioWorkletNodeRef.current) audioWorkletNodeRef.current.disconnect();
-
-    setIsConnected(false);
-    setStatus('idle');
-    setVolumeLevel(0);
-  };
+  }, [disconnect, isMicOn, playAudioChunk]);
 
   useEffect(() => {
     return () => disconnect();
-  }, []);
+  }, [disconnect]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
@@ -193,10 +203,10 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
         {/* Header */}
         <div className="bg-slate-800/50 p-4 flex justify-between items-center border-b border-slate-800">
            <div className="flex items-center gap-2">
-             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} />
+             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} aria-hidden="true" />
              <span className="font-bold text-slate-200">Kontho Live (Bengali)</span>
            </div>
-           <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close live conversation"><Activity size={20} /></button>
+           <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close live conversation"><Activity size={20} aria-hidden="true" /></button>
         </div>
 
         {/* Visualizer Area */}
@@ -209,7 +219,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
              <div className={`
                absolute inset-0 rounded-full border-2 border-amber-500/30
                ${isConnected ? 'animate-ping opacity-20' : 'hidden'}
-             `} />
+             `} aria-hidden="true" />
              <Bot size={64} className={isConnected ? "text-amber-500" : "text-slate-600"} aria-hidden="true" />
            </div>
 
@@ -235,7 +245,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
                className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-all"
                aria-label="Start conversation"
              >
-               {status === 'connecting' ? <Loader2 className="animate-spin" /> : <Mic size={24} />}
+               {status === 'connecting' ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Mic size={24} aria-hidden="true" />}
                Start Conversation
              </button>
            ) : (
@@ -245,7 +255,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
                    className={`p-4 rounded-full transition-all ${isMicOn ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-red-500/20 text-red-500'}`}
                    aria-label={isMicOn ? "Mute microphone" : "Unmute microphone"}
                 >
-                   {isMicOn ? <Mic size={28} /> : <MicOff size={28} />}
+                   {isMicOn ? <Mic size={28} aria-hidden="true" /> : <MicOff size={28} aria-hidden="true" />}
                 </button>
                 
                 <div className="h-16 w-32 bg-slate-900 rounded-xl flex items-center justify-center gap-1 overflow-hidden border border-slate-800" aria-label="Microphone volume level indicator">
@@ -264,7 +274,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
                    className="p-4 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg transition-all"
                    aria-label="End conversation"
                 >
-                   <PhoneOff size={28} />
+                   <PhoneOff size={28} aria-hidden="true" />
                 </button>
              </div>
            )}
@@ -274,4 +284,4 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
   );
 };
 
-export default LiveInterface;
+export default React.memo(LiveInterface);

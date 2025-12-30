@@ -6,8 +6,8 @@ import {
   concatenateBuffers, 
   parseMimeType, 
   pcm16ToFloat32 
-} from '../utils/audioUtils';
-import { WavConversionOptions } from '../types';
+} from '../lib/utils/audioUtils'; // Updated import path
+import { WavConversionOptions } from '../lib/types'; // Updated import path
 
 interface AudioPlayerProps {
   audioChunks: string[]; // Base64 strings
@@ -23,7 +23,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
-  // Fix: Initialize analyserRef with null instead of itself
   const analyserRef = useRef<AnalyserNode | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
@@ -32,73 +31,29 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
   const animationFrameRef = useRef<number>(0);
   const isPlayingRef = useRef<boolean>(false);
 
-  // Initialize Audio Logic when chunks change
-  useEffect(() => {
-    if (audioChunks.length === 0) return;
+  // Helper to format time
+  const formatTime = useCallback((seconds: number): string => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }, []);
 
-    const initAudio = async () => {
+  const stopPlayback = useCallback(() => {
+    if (sourceNodeRef.current) {
       try {
-        const rawBuffers = audioChunks.map(decodeBase64);
-        const combinedBuffer = concatenateBuffers(rawBuffers);
-        
-        // Parse options or default to 24kHz
-        const options: WavConversionOptions = mimeType 
-          ? parseMimeType(mimeType) 
-          : { numChannels: 1, sampleRate: 24000, bitsPerSample: 16 };
-
-        // Convert PCM16 to Float32 for Web Audio API
-        const float32Data = pcm16ToFloat32(combinedBuffer);
-
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({
-            sampleRate: options.sampleRate // Force context to match source if possible
-        });
-        audioContextRef.current = ctx;
-
-        // Create Analyser
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 128; // 64 bins
-        analyser.smoothingTimeConstant = 0.8;
-        analyserRef.current = analyser;
-
-        const buffer = ctx.createBuffer(options.numChannels, float32Data.length, options.sampleRate);
-        buffer.getChannelData(0).set(float32Data);
-        
-        setAudioBuffer(buffer);
-        setDuration(buffer.duration);
-        setProgress(0);
-        pauseTimeRef.current = 0;
+        sourceNodeRef.current.stop();
+        if (audioContextRef.current) {
+            pauseTimeRef.current = audioContextRef.current.currentTime - startTimeRef.current;
+        }
       } catch (e) {
-        console.error("Error processing audio", e);
+        // Ignore errors if already stopped
       }
-    };
-
-    initAudio();
-
-    return () => {
-      stopPlayback();
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
-  }, [audioChunks, mimeType]);
-
-  // Handle Canvas Resizing
-  useEffect(() => {
-    const handleResize = () => {
-      if (canvasRef.current && canvasRef.current.parentElement) {
-        // Set actual pixel dimensions to match display dimensions for sharp rendering
-        const rect = canvasRef.current.parentElement.getBoundingClientRect();
-        canvasRef.current.width = rect.width;
-        canvasRef.current.height = rect.height;
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    // Call once to set initial size
-    handleResize();
-    
-    return () => window.removeEventListener('resize', handleResize);
-  }, [audioChunks]); // Re-run when player appears
+      sourceNodeRef.current = null;
+    }
+    cancelAnimationFrame(animationFrameRef.current);
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+  }, []);
 
   const drawVisualizer = useCallback(() => {
     if (!canvasRef.current || !analyserRef.current) return;
@@ -175,6 +130,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
       audioContextRef.current.resume();
     }
 
+    // Stop any existing source node before creating a new one
+    if (sourceNodeRef.current) {
+        sourceNodeRef.current.stop();
+        sourceNodeRef.current.disconnect();
+    }
+
     const source = audioContextRef.current.createBufferSource();
     source.buffer = audioBuffer;
     
@@ -218,26 +179,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
 
     renderLoop();
 
-  }, [audioBuffer, renderLoop]);
+  }, [audioBuffer, renderLoop, stopPlayback]); // Added stopPlayback to dependencies
 
-  const stopPlayback = useCallback(() => {
-    if (sourceNodeRef.current) {
-      try {
-        sourceNodeRef.current.stop();
-        if (audioContextRef.current) {
-            pauseTimeRef.current = audioContextRef.current.currentTime - startTimeRef.current;
-        }
-      } catch (e) {
-        // Ignore errors if already stopped
-      }
-      sourceNodeRef.current = null;
-    }
-    cancelAnimationFrame(animationFrameRef.current);
-    isPlayingRef.current = false;
-    setIsPlaying(false);
-  }, []);
-
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (isPlaying) {
       stopPlayback();
     } else {
@@ -248,9 +192,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
       }
       play();
     }
-  };
+  }, [isPlaying, progress, play, stopPlayback]);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (audioChunks.length === 0) return;
     
     const rawBuffers = audioChunks.map(decodeBase64);
@@ -271,7 +215,93 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
     a.download = `kontho-ai-${Date.now()}.wav`;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [audioChunks, mimeType]);
+
+  // Initialize Audio Logic when chunks change
+  useEffect(() => {
+    if (audioChunks.length === 0) {
+      stopPlayback();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+      setAudioBuffer(null);
+      setDuration(0);
+      setProgress(0);
+      pauseTimeRef.current = 0;
+      return;
+    }
+
+    const initAudio = async () => {
+      try {
+        // Close previous context if exists
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
+
+        const rawBuffers = audioChunks.map(decodeBase64);
+        const combinedBuffer = concatenateBuffers(rawBuffers);
+        
+        // Parse options or default to 24kHz
+        const options: WavConversionOptions = mimeType 
+          ? parseMimeType(mimeType) 
+          : { numChannels: 1, sampleRate: 24000, bitsPerSample: 16 };
+
+        // Convert PCM16 to Float32 for Web Audio API
+        const float32Data = pcm16ToFloat32(combinedBuffer);
+
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({
+            sampleRate: options.sampleRate // Force context to match source if possible
+        });
+        audioContextRef.current = ctx;
+
+        // Create Analyser
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 128; // 64 bins
+        analyser.smoothingTimeConstant = 0.8;
+        analyserRef.current = analyser;
+
+        const buffer = ctx.createBuffer(options.numChannels, float32Data.length, options.sampleRate);
+        buffer.getChannelData(0).set(float32Data);
+        
+        setAudioBuffer(buffer);
+        setDuration(buffer.duration);
+        setProgress(0);
+        pauseTimeRef.current = 0;
+      } catch (e) {
+        console.error("Error processing audio", e);
+      }
+    };
+
+    initAudio();
+
+    return () => {
+      stopPlayback();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
+  }, [audioChunks, mimeType, stopPlayback]);
+
+  // Handle Canvas Resizing
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current && canvasRef.current.parentElement) {
+        // Set actual pixel dimensions to match display dimensions for sharp rendering
+        const rect = canvasRef.current.parentElement.getBoundingClientRect();
+        canvasRef.current.width = rect.width;
+        canvasRef.current.height = rect.height;
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    // Call once to set initial size
+    handleResize();
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); // Run only once on mount
 
   if (!audioBuffer) return null;
 
@@ -311,7 +341,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
                   title="New Generation"
                   aria-label="Start a new generation"
                 >
-                  <RefreshCw size={24} />
+                  <RefreshCw size={24} aria-hidden="true" />
                 </button>
 
                 <button 
@@ -319,7 +349,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
                   className="p-6 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-full shadow-lg hover:shadow-amber-500/20 transition-all transform hover:scale-105"
                   aria-label={isPlaying ? "Pause audio" : "Play audio"}
                 >
-                  {isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
+                  {isPlaying ? <Pause size={32} fill="currentColor" aria-hidden="true" /> : <Play size={32} fill="currentColor" className="ml-1" aria-hidden="true" />}
                 </button>
 
                 <button 
@@ -328,7 +358,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
                   title="Download WAV"
                   aria-label="Download audio as WAV"
                 >
-                  <Download size={24} />
+                  <Download size={24} aria-hidden="true" />
                 </button>
              </div>
 
@@ -347,10 +377,4 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
   );
 };
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-export default AudioPlayer;
+export default React.memo(AudioPlayer);

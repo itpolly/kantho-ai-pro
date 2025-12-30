@@ -1,15 +1,14 @@
-
-import React, { useState } from 'react';
-import { AlertCircle, X, Activity, Mic } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { AlertCircle, X, Activity } from 'lucide-react';
 import Header from './components/Header';
 import TextInput from './components/TextInput';
 import ControlPanel from './components/ControlPanel';
 import AudioPlayer from './components/AudioPlayer';
 import LiveInterface from './components/LiveInterface';
 import SettingsModal from './components/SettingsModal';
-import { generateSpeechStream } from './services/geminiService';
-import { DEFAULT_TEXT, KONTHO_SYSTEM_INSTRUCTION, VOICE_OPTIONS } from './constants';
-import { VoiceName, VoiceConfigState, PersonaPreset } from './types';
+import { generateSpeechStream } from './lib/api/geminiService'; // Updated import path
+import { DEFAULT_TEXT, KONTHO_SYSTEM_INSTRUCTION, VOICE_OPTIONS } from './lib/constants'; // Updated import path
+import { VoiceName, VoiceConfigState, PersonaPreset } from './lib/types'; // Updated import path
 
 const App: React.FC = () => {
   const [text, setText] = useState<string>(DEFAULT_TEXT);
@@ -32,8 +31,11 @@ const App: React.FC = () => {
   const [hasGenerated, setHasGenerated] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleGenerate = async () => {
-    if (!text.trim()) return;
+  const handleGenerate = useCallback(async () => {
+    if (!text.trim()) {
+      setErrorMessage("Please enter some text to generate speech.");
+      return;
+    }
     
     setIsGenerating(true);
     setAudioChunks([]);
@@ -105,16 +107,16 @@ const App: React.FC = () => {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [text, voiceConfig, instruction]); // Dependencies for useCallback
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setHasGenerated(false);
     setAudioChunks([]);
     setMimeType(null);
     setErrorMessage(null);
-  };
+  }, []);
 
-  const handlePresetSelected = (preset: PersonaPreset) => {
+  const handlePresetSelected = useCallback((preset: PersonaPreset) => {
     if (preset.isMultiSpeaker) {
       let primary = VoiceName.Charon;
       let secondary = VoiceName.Zephyr;
@@ -122,10 +124,10 @@ const App: React.FC = () => {
         case 'natika_drama':
           primary = VoiceName.Fenrir; secondary = VoiceName.Kore; break;
         case 'advertisement_promo':
-           // Puck (Customer) vs Fenrir (High Energy Announcer)
            primary = VoiceName.Puck; secondary = VoiceName.Fenrir; break;
         case 'podcast_interview':
            primary = VoiceName.Charon; secondary = VoiceName.Zephyr; break;
+        default: primary = VoiceName.Charon; secondary = VoiceName.Zephyr; // Fallback
       }
       setVoiceConfig(prev => ({
         ...prev,
@@ -145,7 +147,7 @@ const App: React.FC = () => {
           case 'news_anchor_bengali': primary = VoiceName.Kore; break;
           case 'audiobook_narrator': primary = VoiceName.Puck; break;
           case 'poetry_recitation': primary = VoiceName.Zephyr; break;
-          default: primary = VoiceName.Charon;
+          default: primary = VoiceName.Charon; // Fallback
         }
       }
       setVoiceConfig(prev => ({
@@ -156,26 +158,32 @@ const App: React.FC = () => {
         emotion: preset.defaultEmotion || 'Neutral',
       }));
     }
-  };
+  }, []);
+
+  // Memoize Header and Controls as they don't change state frequently but receive props
+  const MemoizedHeader = useMemo(() => <Header onOpenSettings={() => setShowSettings(true)} />, []);
+  const MemoizedLiveSwitcher = useMemo(() => (
+    <div className="w-full max-w-4xl mx-auto mb-8 flex justify-center">
+      <button 
+        onClick={() => setShowLiveInterface(true)}
+        className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-900/50 to-slate-900 border border-indigo-500/30 hover:border-indigo-400 rounded-full transition-all group hover:shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+        aria-label="Switch to Live Conversation Mode"
+      >
+        <div className="relative">
+          <Activity size={20} className="text-indigo-400" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" aria-hidden="true"></span>
+        </div>
+        <span className="text-indigo-200 font-semibold text-sm group-hover:text-white">Switch to Live Conversation Mode</span>
+      </button>
+    </div>
+  ), []);
 
   return (
     <div className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 font-sans selection:bg-amber-500/30 selection:text-amber-200">
       <div className="container mx-auto px-4 pb-20">
-        <Header onOpenSettings={() => setShowSettings(true)} />
+        {MemoizedHeader}
         
-        {/* Mode Switcher Banner */}
-        <div className="w-full max-w-4xl mx-auto mb-8 flex justify-center">
-           <button 
-             onClick={() => setShowLiveInterface(true)}
-             className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-900/50 to-slate-900 border border-indigo-500/30 hover:border-indigo-400 rounded-full transition-all group hover:shadow-[0_0_20px_rgba(99,102,241,0.2)]"
-           >
-              <div className="relative">
-                <Activity size={20} className="text-indigo-400" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              </div>
-              <span className="text-indigo-200 font-semibold text-sm group-hover:text-white">Switch to Live Conversation Mode</span>
-           </button>
-        </div>
+        {MemoizedLiveSwitcher}
 
         {showLiveInterface && (
            <LiveInterface onClose={() => setShowLiveInterface(false)} />
@@ -199,9 +207,9 @@ const App: React.FC = () => {
               />
               
               {errorMessage && (
-                <div className="w-full max-w-4xl mx-auto animate-fade-in">
+                <div className="w-full max-w-4xl mx-auto animate-fade-in" role="alert">
                   <div className="bg-red-950/40 border border-red-900/50 rounded-lg p-4 flex items-start gap-3">
-                    <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+                    <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} aria-hidden="true" />
                     <div className="flex-1">
                       <h4 className="text-red-400 font-medium text-sm mb-1">Error</h4>
                       <p className="text-red-200/80 text-sm">{errorMessage}</p>
@@ -209,6 +217,7 @@ const App: React.FC = () => {
                     <button 
                       onClick={() => setErrorMessage(null)}
                       className="text-red-400 hover:text-red-300 transition-colors"
+                      aria-label="Close error message"
                     >
                       <X size={16} />
                     </button>
@@ -221,7 +230,7 @@ const App: React.FC = () => {
                 isGenerating={isGenerating}
                 voiceConfig={voiceConfig}
                 onConfigChange={setVoiceConfig}
-                disabled={!text.trim()}
+                disabled={!text.trim() || isGenerating}
               />
             </>
           ) : (

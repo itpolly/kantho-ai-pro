@@ -1,9 +1,8 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Upload, X, Wand2, Play, Pause, Loader2, Check, Sliders, User, Music, Activity, RefreshCw, Volume2 } from 'lucide-react';
-import { analyzeReferenceAudio, generateSpeechStream } from '../services/geminiService';
-import { PersonaPreset, VoiceName } from '../types';
-import { decodeBase64, concatenateBuffers, createWavHeader } from '../utils/audioUtils';
+import { analyzeReferenceAudio, generateSpeechStream } from '../lib/api/geminiService'; // Updated import path
+import { PersonaPreset, VoiceName } from '../lib/types'; // Updated import path
+import { decodeBase64, concatenateBuffers, createWavHeader } from '../lib/utils/audioUtils'; // Updated import path
 
 interface VoiceClonerProps {
   onClose: () => void;
@@ -46,7 +45,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const uploadAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       if (selectedFile.size > 5 * 1024 * 1024) {
@@ -58,9 +57,9 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
       setCloneResult(null);
       setGeneratedPreviewUrl(null);
     }
-  };
+  }, []);
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     if (!file) return;
 
     setIsAnalyzing(true);
@@ -94,9 +93,9 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [file]);
 
-  const handleGeneratePreview = async () => {
+  const handleGeneratePreview = useCallback(async () => {
     if (!cloneResult) return;
     setIsPreviewGenerating(true);
     setGeneratedPreviewUrl(null);
@@ -148,9 +147,9 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
     } finally {
       setIsPreviewGenerating(false);
     }
-  };
+  }, [cloneResult, fineTuning]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!cloneResult) return;
 
     const modifiers = `
@@ -172,7 +171,30 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
 
     onCloneSuccess(newPreset);
     onClose();
-  };
+  }, [cloneResult, fineTuning, onCloneSuccess, onClose]);
+
+  // Handle upload audio playback
+  const toggleUploadAudio = useCallback(() => {
+    if (uploadAudioRef.current) {
+      if (uploadAudioRef.current.paused) {
+        uploadAudioRef.current.play();
+      } else {
+        uploadAudioRef.current.pause();
+      }
+    }
+  }, []);
+
+  // Handle preview audio playback
+  const togglePreviewAudio = useCallback(() => {
+    if (previewAudioRef.current) {
+      if (isPlayingPreview) {
+        previewAudioRef.current.pause();
+      } else {
+        previewAudioRef.current.currentTime = 0;
+        previewAudioRef.current.play();
+      }
+    }
+  }, [isPlayingPreview]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in overflow-y-auto">
@@ -190,7 +212,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors" aria-label="Close Voice Lab">
-            <X size={24} />
+            <X size={24} aria-hidden="true" />
           </button>
         </div>
 
@@ -221,21 +243,16 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                         {uploadPreviewUrl && (
                           <div className="w-full bg-slate-900 rounded-lg p-3 flex items-center gap-3 border border-slate-800 mt-2">
                              <button 
-                               onClick={() => {
-                                 if (uploadAudioRef.current) {
-                                   if (uploadAudioRef.current.paused) uploadAudioRef.current.play();
-                                   else uploadAudioRef.current.pause();
-                                 }
-                               }}
+                               onClick={toggleUploadAudio}
                                className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 text-amber-500 transition-colors"
                                aria-label="Play uploaded audio"
                              >
-                               <Play size={16} fill="currentColor" />
+                               <Play size={16} fill="currentColor" aria-hidden="true" />
                              </button>
                              <div className="h-1 bg-slate-800 rounded-full flex-1 overflow-hidden" aria-hidden="true">
                                <div className="h-full w-1/2 bg-slate-600"></div>
                              </div>
-                             <audio ref={uploadAudioRef} src={uploadPreviewUrl} className="hidden" />
+                             <audio ref={uploadAudioRef} src={uploadPreviewUrl} className="hidden" aria-hidden="true" />
                           </div>
                         )}
                         
@@ -268,7 +285,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                 disabled={!file || isAnalyzing}
                 onClick={handleAnalyze}
                 className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg ${
-                  !file 
+                  !file || isAnalyzing
                     ? 'bg-slate-800 text-slate-600 cursor-not-allowed' 
                     : 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-500 hover:to-orange-500 hover:shadow-amber-500/20 hover:scale-[1.01]'
                 }`}
@@ -321,7 +338,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                        <textarea 
                           readOnly
                           value={cloneResult.instruction}
-                          className="w-full h-24 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-400 mt-2 resize-none focus:outline-none"
+                          className="w-full h-24 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-400 mt-2 resize-none focus:outline-none custom-scrollbar"
                           aria-label="Original instructions from voice analysis"
                        />
                     </div>
@@ -449,16 +466,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
 
                         <button 
                           disabled={!generatedPreviewUrl}
-                          onClick={() => {
-                             if (previewAudioRef.current) {
-                               if (isPlayingPreview) {
-                                 previewAudioRef.current.pause();
-                               } else {
-                                 previewAudioRef.current.currentTime = 0;
-                                 previewAudioRef.current.play();
-                               }
-                             }
-                          }}
+                          onClick={togglePreviewAudio}
                           className={`
                             w-12 h-10 rounded-lg flex items-center justify-center transition-all
                             ${generatedPreviewUrl 
@@ -467,7 +475,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                           `}
                           aria-label={isPlayingPreview ? "Pause preview audio" : "Play preview audio"}
                         >
-                          {isPlayingPreview ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                          {isPlayingPreview ? <Pause size={18} fill="currentColor" aria-hidden="true" /> : <Play size={18} fill="currentColor" aria-hidden="true" />}
                         </button>
                         <audio 
                            ref={previewAudioRef} 
@@ -509,4 +517,4 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
   );
 };
 
-export default VoiceCloner;
+export default React.memo(VoiceCloner);

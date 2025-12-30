@@ -1,0 +1,37 @@
+/* styles/index.css */
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1e293b; /* slate-800 */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #475569; /* slate-600 */
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b; /* slate-500 */
+}
+
+/* Base styles for HTML and Body */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  /* Set font-family here to apply globally */
+  font-family: 'Hind Siliguri', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure root element also takes full height */
+#root {
+  min-height: 100vh;
+}
