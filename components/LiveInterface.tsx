@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, PhoneOff, Activity, Volume2, User, Bot, Loader2 } from 'lucide-react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { float32ToPcm16, pcm16ToFloat32, encodeBase64, decodeBase64 } from '../lib/utils/audioUtils'; // Updated import path
-import { getEffectiveApiKey, getSettings } from '../lib/utils/storageUtils'; // Updated import path
+import { float32ToPcm16, pcm16ToFloat32, encodeBase64, decodeBase64 } from '../lib/utils/audioUtils.js'; // Added .js extension
+import { getEffectiveApiKey, getSettings } from '../lib/utils/storageUtils.js'; // Added .js extension
 
 interface LiveInterfaceProps {
   onClose: () => void;
@@ -238,10 +238,12 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
 
         {/* Controls */}
         <div className="bg-slate-950 p-6 pb-8 border-t border-slate-800">
-           {status === 'idle' || status === 'error' ? (
+           {/* Fix: use status !== 'connected' to correctly capture 'idle', 'error', and 'connecting' in this UI branch */}
+           {status !== 'connected' ? (
              <button 
                onClick={connectToLive}
-               disabled={status === 'connecting'}
+               // Now status === 'connecting' is reachable and valid in this branch
+               disabled={status === 'connecting'} 
                className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-all"
                aria-label="Start conversation"
              >

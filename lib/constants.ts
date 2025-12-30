@@ -1,6 +1,6 @@
 
 
-import { PersonaPreset, VoiceName, PacingOption, EmotionOption } from './types'; // Updated import path
+import { PersonaPreset, VoiceName, PacingOption, EmotionOption } from './types.js'; // Added .js extension
 
 export const APP_NAME = "Kontho-AI";
 export const APP_TAGLINE = "Premium Bangladeshi Voice-Over Artist";

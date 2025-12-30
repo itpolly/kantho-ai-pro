@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Settings2, ChevronDown, ChevronUp, Save, Trash2, Plus, Check, Info, Mic2, Sparkles, Globe, Type, Loader2, X, Image as ImageIcon, Upload } from 'lucide-react';
-import { PersonaPreset, VoiceName } from '../lib/types'; // Updated import path
-import { DEFAULT_PRESETS } from '../lib/constants'; // Updated import path
-import VoiceCloner from './VoiceCloner';
-import { generateScript } from '../lib/api/geminiService'; // Updated import path
-import { blobToBase64 } from '../lib/utils/audioUtils'; // Updated import path
+import { PersonaPreset, VoiceName } from '../lib/types.js'; // Added .js extension
+import { DEFAULT_PRESETS } from '../lib/constants.js'; // Added .js extension
+import VoiceCloner from './VoiceCloner.js'; // Added .js extension
+import { generateScript } from '../lib/api/geminiService.js'; // Added .js extension
+import { blobToBase64 } from '../lib/utils/audioUtils.js'; // Added .js extension
 
 interface TextInputProps {
   value: string;

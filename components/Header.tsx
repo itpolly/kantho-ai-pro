@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mic2, Settings } from 'lucide-react';
-import { APP_NAME, APP_TAGLINE } from '../lib/constants'; // Updated import path
+import { APP_NAME, APP_TAGLINE } from '../lib/constants.js'; // Added .js extension
 
 interface HeaderProps {
   onOpenSettings?: () => void;

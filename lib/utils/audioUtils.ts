@@ -1,6 +1,6 @@
 
 
-import { WavConversionOptions } from '../types'; // Updated import path
+import { WavConversionOptions } from '../types.js'; // Added .js extension
 
 /**
  * Parses MIME type string to extract sample rate and other options.

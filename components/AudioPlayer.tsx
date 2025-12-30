@@ -6,8 +6,8 @@ import {
   concatenateBuffers, 
   parseMimeType, 
   pcm16ToFloat32 
-} from '../lib/utils/audioUtils'; // Updated import path
-import { WavConversionOptions } from '../lib/types'; // Updated import path
+} from '../lib/utils/audioUtils.js'; // Added .js extension
+import { WavConversionOptions } from '../lib/types.js'; // Added .js extension
 
 interface AudioPlayerProps {
   audioChunks: string[]; // Base64 strings

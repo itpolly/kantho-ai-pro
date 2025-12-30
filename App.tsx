@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { AlertCircle, X, Activity } from 'lucide-react';
-import Header from './components/Header';
-import TextInput from './components/TextInput';
-import ControlPanel from './components/ControlPanel';
-import AudioPlayer from './components/AudioPlayer';
-import LiveInterface from './components/LiveInterface';
-import SettingsModal from './components/SettingsModal';
-import { generateSpeechStream } from './lib/api/geminiService'; // Updated import path
-import { DEFAULT_TEXT, KONTHO_SYSTEM_INSTRUCTION, VOICE_OPTIONS } from './lib/constants'; // Updated import path
-import { VoiceName, VoiceConfigState, PersonaPreset } from './lib/types'; // Updated import path
+import Header from './components/Header.js'; // Added .js extension
+import TextInput from './components/TextInput.js'; // Added .js extension
+import ControlPanel from './components/ControlPanel.js'; // Added .js extension
+import AudioPlayer from './components/AudioPlayer.js'; // Added .js extension
+import LiveInterface from './components/LiveInterface.js'; // Added .js extension
+import SettingsModal from './components/SettingsModal.js'; // Added .js extension
+import { generateSpeechStream } from './lib/api/geminiService.js'; // Added .js extension
+import { DEFAULT_TEXT, KONTHO_SYSTEM_INSTRUCTION, VOICE_OPTIONS } from './lib/constants.js'; // Added .js extension
+import { VoiceName, VoiceConfigState, PersonaPreset } from './lib/types.js'; // Added .js extension
 
 const App: React.FC = () => {
   const [text, setText] = useState<string>(DEFAULT_TEXT);

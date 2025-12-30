@@ -1,6 +1,6 @@
 
 
-import { AppSettings } from '../types'; // Updated import path
+import { AppSettings } from '../types.js'; // Added .js extension
 
 const SETTINGS_KEY = 'kontho_global_settings';
 

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Upload, X, Wand2, Play, Pause, Loader2, Check, Sliders, User, Music, Activity, RefreshCw, Volume2 } from 'lucide-react';
-import { analyzeReferenceAudio, generateSpeechStream } from '../lib/api/geminiService'; // Updated import path
-import { PersonaPreset, VoiceName } from '../lib/types'; // Updated import path
-import { decodeBase64, concatenateBuffers, createWavHeader } from '../lib/utils/audioUtils'; // Updated import path
+import { analyzeReferenceAudio, generateSpeechStream } from '../lib/api/geminiService.js'; // Added .js extension
+import { PersonaPreset, VoiceName } from '../lib/types.js'; // Added .js extension
+import { decodeBase64, concatenateBuffers, createWavHeader } from '../lib/utils/audioUtils.js'; // Added .js extension
 
 interface VoiceClonerProps {
   onClose: () => void;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Save, RefreshCw, Key, Cpu, Zap, CheckCircle, XCircle } from 'lucide-react';
-import { getSettings, saveSettings, DEFAULT_SETTINGS, TTS_MODEL_OPTIONS, SCRIPT_MODEL_OPTIONS, LIVE_MODEL_OPTIONS } from '../lib/utils/storageUtils'; // Updated import path
-import { AppSettings } from '../lib/types'; // Updated import path
+import { getSettings, saveSettings, DEFAULT_SETTINGS, TTS_MODEL_OPTIONS, SCRIPT_MODEL_OPTIONS, LIVE_MODEL_OPTIONS } from '../lib/utils/storageUtils.js'; // Added .js extension
+import { AppSettings } from '../lib/types.js'; // Added .js extension
 
 interface SettingsModalProps {
   onClose: () => void;
