@@ -74,6 +74,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                  relative w-full p-1 rounded-xl flex items-center bg-slate-950 border border-slate-800 transition-all
                  ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
               `}
+              aria-label={voiceConfig.mode === 'single' ? "Switch to multi-speaker mode" : "Switch to single-speaker mode"}
+              aria-pressed={voiceConfig.mode === 'multi'}
             >
               <div 
                  className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-slate-800 rounded-lg shadow-sm transition-all duration-300 ease-out border border-slate-700
@@ -93,15 +95,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <div className="w-full lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Primary Voice */}
             <div>
-              <label className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-3 block">
+              <label htmlFor="primary-voice-select" className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-3 block">
                 {voiceConfig.mode === 'multi' ? 'Speaker 1 (Host/Pro)' : 'Primary Voice'}
               </label>
               <div className="relative">
                 <select
+                  id="primary-voice-select"
                   value={voiceConfig.primaryVoice}
                   onChange={(e) => handlePrimaryChange(e.target.value as VoiceName)}
                   disabled={disabled}
                   className="w-full bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-slate-200 text-sm rounded-xl focus:ring-1 focus:ring-amber-500 focus:border-amber-500 px-4 py-3.5 appearance-none cursor-pointer transition-colors"
+                  aria-label="Select primary voice"
                 >
                   {VOICE_OPTIONS.map((voice) => (
                     <option key={`p-${voice.value}`} value={voice.value}>
@@ -116,15 +120,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Secondary Voice */}
             {voiceConfig.mode === 'multi' && (
               <div className="animate-fade-in">
-                <label className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3 block">
+                <label htmlFor="secondary-voice-select" className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3 block">
                   Speaker 2 (Guest/Client)
                 </label>
                 <div className="relative">
                   <select
+                    id="secondary-voice-select"
                     value={voiceConfig.secondaryVoice}
                     onChange={(e) => handleSecondaryChange(e.target.value as VoiceName)}
                     disabled={disabled}
                     className="w-full bg-slate-950 border border-slate-800 hover:border-indigo-500/50 text-slate-200 text-sm rounded-xl focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 px-4 py-3.5 appearance-none cursor-pointer transition-colors"
+                    aria-label="Select secondary voice"
                   >
                     {VOICE_OPTIONS.map((voice) => (
                       <option key={`s-${voice.value}`} value={voice.value}>
@@ -145,16 +151,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           {/* Pacing Slider */}
           <div className="space-y-4">
              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-teal-500 uppercase tracking-wider flex items-center gap-2">
+                <label htmlFor="pacing-slider" className="text-xs font-bold text-teal-500 uppercase tracking-wider flex items-center gap-2">
                   <Gauge size={16} /> Pacing Speed
                 </label>
-                <span className="text-xs font-mono bg-slate-950 px-2 py-1 rounded text-teal-400 border border-slate-800">
+                <span className="text-xs font-mono bg-slate-950 px-2 py-1 rounded text-teal-400 border border-slate-800" aria-live="polite">
                    {PACING_OPTIONS[safePacingIndex]?.label}
                 </span>
              </div>
              
              <div className="relative py-2 select-none">
                 <input 
+                  id="pacing-slider"
                   type="range"
                   min="0"
                   max={PACING_OPTIONS.length - 1}
@@ -166,6 +173,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   style={{
                     background: `linear-gradient(to right, #14b8a6 ${safePacingIndex * (100 / (PACING_OPTIONS.length - 1))}%, #1e293b ${safePacingIndex * (100 / (PACING_OPTIONS.length - 1))}%)`
                   }}
+                  aria-valuenow={safePacingIndex}
+                  aria-valuemin={0}
+                  aria-valuemax={PACING_OPTIONS.length - 1}
+                  aria-valuetext={PACING_OPTIONS[safePacingIndex]?.label}
+                  aria-label="Pacing speed slider"
                 />
                 
                 {/* Clickable Labels */}
@@ -180,6 +192,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             ? 'text-teal-400 font-bold scale-110' 
                             : 'text-slate-500 hover:text-slate-300'
                         }`}
+                        aria-label={`Set pacing to ${opt.value}`}
                       >
                         {pacingLabels[index]}
                       </button>
@@ -197,17 +210,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           {/* Emotion Dropdown */}
           <div className="space-y-4">
-             <label className="text-xs font-bold text-pink-500 uppercase tracking-wider flex items-center gap-2">
+             <label htmlFor="emotion-select" className="text-xs font-bold text-pink-500 uppercase tracking-wider flex items-center gap-2">
                 <Smile size={16} /> Emotional Tone
              </label>
              
              <div className="relative group">
                 <div className="absolute inset-0 bg-pink-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 <select
+                  id="emotion-select"
                   value={voiceConfig.emotion}
                   onChange={(e) => handleEmotionSelect(e.target.value as EmotionOption)}
                   disabled={disabled}
                   className="w-full bg-slate-950 border border-slate-800 hover:border-pink-500/50 text-slate-200 text-sm rounded-xl focus:ring-1 focus:ring-pink-500 focus:border-pink-500 px-4 py-3.5 appearance-none cursor-pointer transition-colors shadow-sm relative z-10"
+                  aria-label="Select emotional tone"
                 >
                   {EMOTION_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -239,6 +254,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             : 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white hover:shadow-[0_0_40px_rgba(245,158,11,0.4)] hover:scale-[1.01]'
           }
         `}
+        aria-label={isGenerating ? "Generating studio speech" : "Generate studio speech"}
       >
         {isGenerating ? (
           <>

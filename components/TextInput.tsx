@@ -113,14 +113,29 @@ const TextInput: React.FC<TextInputProps> = ({
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert("Image file is too large (max 5MB). Please choose a smaller file.");
+        return;
+      }
       setScriptImage(file);
       setScriptImagePreview(URL.createObjectURL(file));
     }
   };
 
   const handleGenerateScript = async () => {
-    if (scriptMode !== 'image' && !scriptInput.trim()) return;
-    if (scriptMode === 'image' && !scriptImage) return;
+    // Validation for different modes
+    if (scriptMode === 'url' && (!scriptInput.trim() || !scriptInput.startsWith('http'))) {
+      alert("Please enter a valid URL for webpage script generation.");
+      return;
+    }
+    if (scriptMode === 'topic' && !scriptInput.trim()) {
+      alert("Please enter a topic for script generation.");
+      return;
+    }
+    if (scriptMode === 'image' && !scriptImage && !scriptInput.trim()) {
+      alert("Please upload an image OR provide a description for image-based script generation.");
+      return;
+    }
 
     setIsGeneratingScript(true);
     
@@ -150,15 +165,29 @@ const TextInput: React.FC<TextInputProps> = ({
             setScriptImagePreview(null);
         }
     } catch (e: any) {
-        console.error(e);
+        console.error("Script generation error:", e);
         const errStr = e?.message || JSON.stringify(e);
-        if (errStr.includes('429')) {
-           alert("Quota Exceeded: Please wait a moment before generating another script.");
-        } else {
-           alert("Could not generate script. Please try again.");
+        if (errStr.includes('429') || errStr.toLowerCase().includes('quota')) {
+           alert("Quota Exceeded: The AI script generator is currently busy. Please wait a moment before trying again.");
+        } else if (errStr.toLowerCase().includes('safety')) {
+           alert("Script generation blocked due to safety concerns. Please refine your input.");
+        } else if (errStr.toLowerCase().includes('not_found') || errStr.includes('404')) {
+           alert("Model Not Found / Permissions Error: Check your GenAI Key or project settings.");
+        }
+        else {
+           alert("Could not generate script. Please try again with a different input.");
         }
     } finally {
         setIsGeneratingScript(false);
+    }
+  };
+
+  const getPlaceholderText = () => {
+    switch(scriptMode) {
+      case 'topic': return "E.g. A mystery story about a detective in Dhaka...";
+      case 'url': return "E.g. https://www.prothomalo.com/bangladesh/latest-news";
+      case 'image': return "Optional: Describe what you want from this image...";
+      default: return "";
     }
   };
 
@@ -176,6 +205,9 @@ const TextInput: React.FC<TextInputProps> = ({
         <button 
           onClick={() => setShowSettings(!showSettings)}
           className="w-full px-4 py-3 bg-slate-800/50 flex justify-between items-center text-xs font-semibold text-slate-400 hover:text-amber-400 uppercase tracking-wider transition-colors"
+          aria-expanded={showSettings}
+          aria-controls="persona-settings-panel"
+          aria-label={showSettings ? "Hide persona settings" : "Show persona settings"}
         >
           <div className="flex items-center space-x-2">
             <Settings2 size={14} />
@@ -192,14 +224,15 @@ const TextInput: React.FC<TextInputProps> = ({
         </button>
         
         {showSettings && (
-          <div className="p-4 bg-slate-900 border-t border-slate-800 animate-fade-in space-y-3">
+          <div id="persona-settings-panel" className="p-4 bg-slate-900 border-t border-slate-800 animate-fade-in space-y-3">
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-slate-800">
                <div className="flex-1 flex items-center space-x-2">
                  <select 
                    value={selectedPresetId}
                    onChange={handleSelectPreset}
                    disabled={disabled}
-                   className="bg-slate-950 border border-slate-700 text-slate-300 text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 block p-2 w-full md:w-64"
+                   className="bg-slate-950 border border-slate-700 text-slate-300 text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 block p-2 w-full md:w-64 cursor-pointer"
+                   aria-label="Select a persona preset"
                  >
                    <option value="" disabled>Select a Preset...</option>
                    <optgroup label="Defaults">
@@ -217,11 +250,11 @@ const TextInput: React.FC<TextInputProps> = ({
                  </select>
                  
                  {selectedPresetId && !presets.find(p => p.id === selectedPresetId)?.isDefault && (
-                    <button onClick={() => handleDeletePreset(selectedPresetId)} className="p-2 text-red-400 hover:bg-red-900/30 rounded-md transition-colors">
+                    <button onClick={() => handleDeletePreset(selectedPresetId)} className="p-2 text-red-400 hover:bg-red-900/30 rounded-md transition-colors" aria-label="Delete selected preset">
                       <Trash2 size={16} />
                     </button>
                  )}
-                 <button onClick={() => setShowCloner(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-500/10 border border-indigo-500/50 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-md text-xs font-semibold transition-all ml-2">
+                 <button onClick={() => setShowCloner(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-500/10 border border-indigo-500/50 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-md text-xs font-semibold transition-all ml-2" aria-label="Open Voice Lab for voice cloning">
                     <Mic2 size={14} /> <span>Voice Lab</span>
                  </button>
                </div>
@@ -232,12 +265,13 @@ const TextInput: React.FC<TextInputProps> = ({
                        type="text" value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)}
                        placeholder="Preset Name..." className="bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-md p-2 w-40 focus:outline-none focus:border-amber-500"
                        autoFocus
+                       aria-label="New preset name"
                      />
-                     <button onClick={handleSavePreset} className="p-2 bg-amber-600 hover:bg-amber-500 text-white rounded-md"><Check size={16} /></button>
-                     <button onClick={() => setIsSaving(false)} className="p-2 text-slate-400 hover:text-white"><Plus size={16} className="rotate-45" /></button>
+                     <button onClick={handleSavePreset} className="p-2 bg-amber-600 hover:bg-amber-500 text-white rounded-md" aria-label="Save preset"><Check size={16} /></button>
+                     <button onClick={() => setIsSaving(false)} className="p-2 text-slate-400 hover:text-white" aria-label="Cancel saving preset"><X size={16} /></button> {/* Changed Plus to X for cancel */}
                    </div>
                  ) : (
-                   <button onClick={() => setIsSaving(true)} disabled={disabled} className="flex items-center space-x-1 text-xs font-semibold text-amber-500 hover:text-amber-400 px-3 py-2 rounded-md hover:bg-slate-800 transition-colors">
+                   <button onClick={() => setIsSaving(true)} disabled={disabled} className="flex items-center space-x-1 text-xs font-semibold text-amber-500 hover:text-amber-400 px-3 py-2 rounded-md hover:bg-slate-800 transition-colors" aria-label="Save current persona as a new preset">
                      <Save size={14} /> <span>Save as Preset</span>
                    </button>
                  )}
@@ -253,6 +287,7 @@ const TextInput: React.FC<TextInputProps> = ({
                 disabled={disabled}
                 className="w-full h-40 p-3 bg-slate-950 text-sm font-mono text-amber-100/80 placeholder-slate-700 focus:outline-none border border-slate-700 rounded-lg resize-y custom-scrollbar"
                 spellCheck={false}
+                aria-label="System instruction for the voice persona"
               />
              </div>
           </div>
@@ -262,7 +297,7 @@ const TextInput: React.FC<TextInputProps> = ({
       {/* Script Generator Panel */}
       {showScriptGen && (
         <div className="bg-slate-900 rounded-xl border border-amber-500/30 p-4 animate-fade-in shadow-2xl relative">
-            <button onClick={() => setShowScriptGen(false)} className="absolute top-3 right-3 text-slate-500 hover:text-white"><X size={16} /></button>
+            <button onClick={() => setShowScriptGen(false)} className="absolute top-3 right-3 text-slate-500 hover:text-white" aria-label="Close script generator"><X size={16} /></button>
             <div className="flex items-center gap-2 mb-4 text-amber-500">
                <Sparkles size={18} className="animate-pulse" />
                <h3 className="font-bold text-sm uppercase tracking-wide">Magic Script Generator</h3>
@@ -275,12 +310,14 @@ const TextInput: React.FC<TextInputProps> = ({
                ].map((m) => (
                  <button
                    key={m.id}
-                   onClick={() => setScriptMode(m.id as any)}
+                   onClick={() => { setScriptMode(m.id as any); setScriptInput(""); setScriptImage(null); setScriptImagePreview(null); }}
                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
                       scriptMode === m.id 
                       ? `${m.bg} ${m.color} border border-${m.color.split('-')[1]}-500/50` 
                       : 'bg-slate-950 text-slate-500 border border-slate-800 hover:border-slate-700'
                    }`}
+                   aria-pressed={scriptMode === m.id}
+                   aria-label={`Generate script ${m.label.toLowerCase()}`}
                  >
                    <m.icon size={14} /> {m.label}
                  </button>
@@ -289,7 +326,7 @@ const TextInput: React.FC<TextInputProps> = ({
 
             {/* Input Area */}
             <div className="flex flex-col gap-3">
-                {scriptMode === 'image' ? (
+                {scriptMode === 'image' && (
                    <div className="w-full border-2 border-dashed border-slate-700 hover:border-pink-500/50 rounded-lg p-6 bg-slate-950 flex flex-col items-center justify-center transition-colors">
                       {scriptImagePreview ? (
                         <div className="relative w-full h-48 rounded-md overflow-hidden bg-black/50 flex items-center justify-center">
@@ -297,26 +334,27 @@ const TextInput: React.FC<TextInputProps> = ({
                            <button 
                              onClick={() => { setScriptImage(null); setScriptImagePreview(null); }}
                              className="absolute top-2 right-2 p-1 bg-black/70 text-white rounded-full hover:bg-red-500 transition-colors"
+                             aria-label="Remove image"
                            >
                              <X size={14} />
                            </button>
                         </div>
                       ) : (
-                        <label className="cursor-pointer flex flex-col items-center gap-2 w-full h-full">
+                        <label className="cursor-pointer flex flex-col items-center gap-2 w-full h-full" aria-label="Upload image for script generation">
                            <Upload size={32} className="text-slate-600" />
                            <span className="text-sm text-slate-400 font-medium">Click to Upload Image</span>
-                           <span className="text-xs text-slate-600">Supports JPG, PNG</span>
+                           <span className="text-xs text-slate-600">Supports JPG, PNG (Max 5MB)</span>
                            <input 
                              type="file" 
                              ref={fileInputRef} 
                              className="hidden" 
-                             accept="image/*" 
+                             accept="image/jpeg, image/png, image/webp" 
                              onChange={handleImageUpload} 
                            />
                         </label>
                       )}
                    </div>
-                ) : null}
+                )}
 
                 <div className="flex gap-2">
                   <input 
@@ -324,14 +362,20 @@ const TextInput: React.FC<TextInputProps> = ({
                      value={scriptInput}
                      onChange={(e) => setScriptInput(e.target.value)}
                      onKeyDown={(e) => e.key === 'Enter' && handleGenerateScript()}
-                     placeholder={scriptMode === 'image' ? "Optional: Describe what you want from this image..." : (scriptMode === 'url' ? "E.g. https://..." : "E.g. A mystery story...")}
+                     placeholder={getPlaceholderText()}
                      className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-200 focus:border-amber-500 outline-none placeholder:text-slate-600"
                      autoFocus
+                     aria-label={`Script input for ${scriptMode}`}
                   />
                   <button
                      onClick={handleGenerateScript}
-                     disabled={isGeneratingScript || (scriptMode !== 'image' && !scriptInput.trim()) || (scriptMode === 'image' && !scriptImage)}
+                     disabled={isGeneratingScript || 
+                       (scriptMode === 'topic' && !scriptInput.trim()) ||
+                       (scriptMode === 'url' && (!scriptInput.trim() || !scriptInput.startsWith('http'))) ||
+                       (scriptMode === 'image' && !scriptImage && !scriptInput.trim())
+                     }
                      className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg font-semibold text-xs transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                     aria-label="Generate script"
                   >
                      {isGeneratingScript ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                      Generate
@@ -349,13 +393,13 @@ const TextInput: React.FC<TextInputProps> = ({
             <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold text-amber-500 uppercase tracking-wider">Script Input</span>
                 {!showScriptGen && (
-                    <button onClick={() => setShowScriptGen(true)} className="flex items-center gap-1 px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded text-[10px] font-semibold transition-colors border border-amber-500/20">
+                    <button onClick={() => setShowScriptGen(true)} className="flex items-center gap-1 px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded text-[10px] font-semibold transition-colors border border-amber-500/20" aria-label="Open AI script generator">
                       <Sparkles size={10} /> <span>Write with AI</span>
                     </button>
                 )}
             </div>
             <div className="flex items-center space-x-4">
-              <span className="hidden md:flex items-center space-x-1 text-[10px] text-slate-500 border border-slate-700 px-2 py-0.5 rounded">
+              <span className="hidden md:flex items-center space-x-1 text-[10px] text-slate-500 border border-slate-700 px-2 py-0.5 rounded" aria-live="polite">
                 <Info size={10} /> <span>{mode === 'multi' ? 'Conversation Mode' : 'Single Speaker'}</span>
               </span>
             </div>
@@ -364,10 +408,11 @@ const TextInput: React.FC<TextInputProps> = ({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
-            placeholder={mode === 'multi' ? "For Multi-Speaker Conversation..." : "Write your script here..."}
+            placeholder={mode === 'multi' ? "Speaker 1: Type the first speaker's line here...\nSpeaker 2: Type the second speaker's response here..." : "Write your script here in Bengali..."}
             style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
             className="w-full h-64 p-6 bg-transparent text-xl md:text-2xl text-slate-200 placeholder-slate-700 focus:outline-none resize-none leading-loose font-light"
             spellCheck={false}
+            aria-label="Main script input area"
           />
           <div className="absolute bottom-4 right-4 text-slate-600 text-sm pointer-events-none">
             {value.length} chars

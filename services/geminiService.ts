@@ -5,9 +5,7 @@ import { getSettings, getEffectiveApiKey } from '../utils/storageUtils';
 
 const getClient = () => {
   const apiKey = getEffectiveApiKey();
-  if (!apiKey) {
-    throw new Error('API Key is missing. Please configure it in Settings.');
-  }
+  // As per guidelines, process.env.API_KEY is assumed to be pre-configured and valid.
   return new GoogleGenAI({ apiKey });
 };
 
@@ -294,26 +292,29 @@ ${formattingRules}
 Output ONLY the raw script text in Bengali.
 `;
 
-  let prompt = "";
+  let userPrompt = "";
   const parts: any[] = [];
   let tools: any[] = [];
 
   if (type === 'url') {
-    prompt = `SOURCE URL: ${input}\n\nACTION: Read the website content and write a ${modeLabel} script summarizing it in Bengali.`;
+    userPrompt = `Please visit the URL below, summarize its content, and generate a ${modeLabel} script based on the summary.
+URL: ${input}
+
+If the content is not directly in Bengali, translate and summarize it into Bengali. Focus on key information relevant for a voice-over.`;
     tools = [{ googleSearch: {} }];
-    parts.push({ text: prompt });
+    parts.push({ text: userPrompt });
   } else if (type === 'image' && options?.image) {
-    prompt = `IMAGE CONTEXT: ${input || "Analyze this image."}\n\nACTION: Write a creative ${modeLabel} script describing or inspired by this image in Bengali.`;
-    parts.push({ text: prompt });
+    userPrompt = `Analyze the attached image. ${input.trim() ? `Use the following context for inspiration: "${input.trim()}"` : 'Describe the image content, atmosphere, and any discernible narrative elements.'} Then, write a creative ${modeLabel} script in Bengali inspired by or describing this image.`;
+    parts.push({ text: userPrompt });
     parts.push({
       inlineData: {
         mimeType: options.image.mimeType,
         data: options.image.data
       }
     });
-  } else {
-    prompt = `TOPIC: "${input}"\n\nACTION: Write a creative ${modeLabel} script about this topic in Bengali.`;
-    parts.push({ text: prompt });
+  } else { // type === 'topic'
+    userPrompt = `Generate a creative ${modeLabel} script about the following topic in Bengali: "${input}".`;
+    parts.push({ text: userPrompt });
   }
 
   try {
@@ -323,7 +324,7 @@ Output ONLY the raw script text in Bengali.
       contents: [{ role: 'user', parts: parts }],
       config: {
         systemInstruction,
-        tools,
+        tools, // Tools are only active if needed (e.g., googleSearch)
       },
     })) as GenerateContentResponse;
 

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, RefreshCw, Key, Cpu, Zap } from 'lucide-react';
-import { getSettings, saveSettings, DEFAULT_SETTINGS } from '../utils/storageUtils';
+import { X, Save, RefreshCw, Key, Cpu, Zap, CheckCircle, XCircle } from 'lucide-react';
+import { getSettings, saveSettings, DEFAULT_SETTINGS, TTS_MODEL_OPTIONS, SCRIPT_MODEL_OPTIONS, LIVE_MODEL_OPTIONS } from '../utils/storageUtils';
 import { AppSettings } from '../types';
 
 interface SettingsModalProps {
@@ -10,15 +10,39 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [showKey, setShowKey] = useState(false);
   const [hasSaved, setHasSaved] = useState(false);
 
+  // State for custom model inputs
+  const [customTtsModel, setCustomTtsModel] = useState<string>('');
+  const [customScriptModel, setCustomScriptModel] = useState<string>('');
+  const [customLiveModel, setCustomLiveModel] = useState<string>('');
+
   useEffect(() => {
-    setSettings(getSettings());
+    const currentSettings = getSettings();
+    setSettings(currentSettings);
+    // Initialize custom model inputs based on current settings if they don't match predefined options
+    if (!TTS_MODEL_OPTIONS.some(o => o.value === currentSettings.models.tts)) {
+      setCustomTtsModel(currentSettings.models.tts);
+    }
+    if (!SCRIPT_MODEL_OPTIONS.some(o => o.value === currentSettings.models.script)) {
+      setCustomScriptModel(currentSettings.models.script);
+    }
+    if (!LIVE_MODEL_OPTIONS.some(o => o.value === currentSettings.models.live)) {
+      setCustomLiveModel(currentSettings.models.live);
+    }
   }, []);
 
   const handleSave = () => {
-    saveSettings(settings);
+    // Apply custom model values if "custom" is selected in dropdowns
+    const finalSettings = {
+      ...settings,
+      models: {
+        tts: settings.models.tts === 'custom' ? customTtsModel : settings.models.tts,
+        script: settings.models.script === 'custom' ? customScriptModel : settings.models.script,
+        live: settings.models.live === 'custom' ? customLiveModel : settings.models.live,
+      },
+    };
+    saveSettings(finalSettings);
     setHasSaved(true);
     setTimeout(() => {
         setHasSaved(false);
@@ -27,9 +51,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   };
 
   const handleReset = () => {
-    if (confirm("Reset all settings to default? This will clear your custom API key.")) {
+    if (confirm("Reset all settings to default?")) {
         setSettings(DEFAULT_SETTINGS);
         saveSettings(DEFAULT_SETTINGS);
+        setCustomTtsModel('');
+        setCustomScriptModel('');
+        setCustomLiveModel('');
     }
   };
 
@@ -40,10 +67,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         {/* Header */}
         <div className="bg-slate-800/50 p-5 border-b border-slate-700 flex justify-between items-center">
           <div className="flex items-center gap-3 text-slate-200">
-            <Cpu size={24} className="text-amber-500" />
+            <Cpu size={24} className="text-amber-500" aria-hidden="true" />
             <h3 className="font-bold text-xl">Global Configuration</h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors" aria-label="Close settings">
             <X size={20} />
           </button>
         </div>
@@ -51,32 +78,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         {/* Content */}
         <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
            
-           {/* API Key Section */}
-           <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                 <Key size={14} /> Gemini API Key
-              </label>
-              <div className="relative">
-                 <input 
-                   type={showKey ? "text" : "password"}
-                   value={settings.apiKey}
-                   onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
-                   placeholder="Enter your API Key (AI Studio)"
-                   className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-4 pr-12 py-3 text-slate-200 focus:border-amber-500 outline-none font-mono text-sm"
-                 />
-                 <button 
-                   onClick={() => setShowKey(!showKey)}
-                   className="absolute right-3 top-3 text-xs text-slate-500 hover:text-slate-300 uppercase font-semibold"
-                 >
-                    {showKey ? "Hide" : "Show"}
-                 </button>
-              </div>
-              <p className="text-xs text-slate-500">
-                 Leave empty to use the built-in system key (if available). Your key is stored locally in your browser.
-              </p>
+           {/* API Key Section - REMOVED as per guidelines */}
+           <div className="bg-blue-950/20 border border-blue-900/50 rounded-lg p-3 text-sm text-blue-200 flex items-center gap-3" role="status">
+             <Key size={18} className="text-blue-400" aria-hidden="true" />
+             <p>GenAI Key is sourced from <code>process.env.API_KEY</code> and cannot be changed here.</p>
            </div>
 
-           <div className="h-px bg-slate-800 w-full" />
+           <div className="h-px bg-slate-800 w-full" role="separator" />
 
            {/* Models Section */}
            <div className="space-y-4">
@@ -84,58 +92,106 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
               {/* TTS Model */}
               <div className="space-y-1">
-                 <label className="text-xs text-slate-500">Text-to-Speech Model</label>
+                 <label htmlFor="tts-model-select" className="text-xs text-slate-500">Text-to-Speech Model</label>
                  <div className="relative">
-                    <input 
-                      type="text"
+                    <select 
+                      id="tts-model-select"
                       value={settings.models.tts}
                       onChange={(e) => setSettings({
                           ...settings, 
                           models: { ...settings.models, tts: e.target.value }
                       })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none"
-                    />
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none appearance-none cursor-pointer"
+                      aria-label="Text-to-Speech Model selection"
+                    >
+                        {TTS_MODEL_OPTIONS.map(option => (
+                           <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                    </select>
+                    {settings.models.tts === 'custom' && (
+                      <input
+                        type="text"
+                        value={customTtsModel}
+                        onChange={(e) => setCustomTtsModel(e.target.value)}
+                        placeholder="Enter custom TTS model ID"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none mt-2"
+                        aria-label="Custom Text-to-Speech model ID input"
+                      />
+                    )}
                  </div>
-                 <p className="text-[10px] text-slate-600">Default: gemini-2.5-flash-preview-tts</p>
+                 <p className="text-[10px] text-slate-600">
+                   Used for generating high-quality speech from text.
+                 </p>
               </div>
 
               {/* Script Model */}
               <div className="space-y-1">
-                 <label className="text-xs text-slate-500">Script Gen & Analysis Model</label>
+                 <label htmlFor="script-model-select" className="text-xs text-slate-500">Script Gen & Analysis Model</label>
                  <div className="relative">
                     <select 
+                      id="script-model-select"
                       value={settings.models.script}
                       onChange={(e) => setSettings({
                           ...settings, 
                           models: { ...settings.models, script: e.target.value }
                       })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none appearance-none"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none appearance-none cursor-pointer"
+                      aria-label="Script Generation and Analysis Model selection"
                     >
-                        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Experimental</option>
+                        {SCRIPT_MODEL_OPTIONS.map(option => (
+                           <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
                     </select>
+                    {settings.models.script === 'custom' && (
+                      <input
+                        type="text"
+                        value={customScriptModel}
+                        onChange={(e) => setCustomScriptModel(e.target.value)}
+                        placeholder="Enter custom Script model ID"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none mt-2"
+                        aria-label="Custom Script Generation and Analysis model ID input"
+                      />
+                    )}
                  </div>
+                 <p className="text-[10px] text-slate-600">
+                   Powers AI script generation and voice cloning analysis.
+                 </p>
               </div>
 
               {/* Live Model */}
               <div className="space-y-1">
-                 <label className="text-xs text-slate-500 flex items-center gap-1">
-                    <Zap size={10} className="text-yellow-500" /> Live API Model
+                 <label htmlFor="live-api-model-select" className="text-xs text-slate-500 flex items-center gap-1">
+                    <Zap size={10} className="text-yellow-500" aria-hidden="true" /> Live API Model
                  </label>
                  <div className="relative">
-                    <input 
-                      type="text"
+                    <select 
+                      id="live-api-model-select"
                       value={settings.models.live}
                       onChange={(e) => setSettings({
                           ...settings, 
                           models: { ...settings.models, live: e.target.value }
                       })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none"
-                    />
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none appearance-none cursor-pointer"
+                      aria-label="Live API Model selection"
+                    >
+                        {LIVE_MODEL_OPTIONS.map(option => (
+                           <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                    </select>
+                    {settings.models.live === 'custom' && (
+                      <input
+                        type="text"
+                        value={customLiveModel}
+                        onChange={(e) => setCustomLiveModel(e.target.value)}
+                        placeholder="Enter custom Live API model ID"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-amber-500 outline-none mt-2"
+                        aria-label="Custom Live API model ID input"
+                      />
+                    )}
                  </div>
-                 <p className="text-[10px] text-slate-600">Default: gemini-2.5-flash-native-audio-preview-09-2025</p>
+                 <p className="text-[10px] text-slate-600">
+                   Used for real-time, low-latency voice conversations.
+                 </p>
               </div>
 
            </div>
@@ -146,8 +202,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             <button 
               onClick={handleReset}
               className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-red-400 transition-colors"
+              aria-label="Reset all settings to default"
             >
-               <RefreshCw size={14} /> Reset Defaults
+               <RefreshCw size={14} aria-hidden="true" /> Reset Defaults
             </button>
 
             <button 
@@ -156,8 +213,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                  px-6 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all
                  ${hasSaved ? 'bg-green-600 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/20'}
               `}
+              aria-label={hasSaved ? "Settings saved" : "Save changes"}
             >
-               {hasSaved ? <div className="flex items-center gap-2"><div className="w-2 h-2 bg-white rounded-full animate-ping"/> Saved</div> : <><Save size={16} /> Save Changes</>}
+               {hasSaved ? <div className="flex items-center gap-2" aria-live="polite"><div className="w-2 h-2 bg-white rounded-full animate-ping" aria-hidden="true"/> Saved</div> : <><Save size={16} aria-hidden="true" /> Save Changes</>}
             </button>
         </div>
 

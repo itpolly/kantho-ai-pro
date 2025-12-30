@@ -1,5 +1,7 @@
 {
   "name": "Kontho-AI",
   "description": "A premium Bangladeshi Voice-Over Artist application generating studio-quality Bengali speech using Gemini's advanced TTS models.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

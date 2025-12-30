@@ -23,6 +23,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+  // Fix: Initialize analyserRef with null instead of itself
   const analyserRef = useRef<AnalyserNode | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
@@ -281,14 +282,20 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
         <canvas 
             ref={canvasRef}
             className="absolute inset-0 w-full h-full opacity-30 pointer-events-none"
+            aria-hidden="true"
         />
 
         <div className="relative z-10 flex flex-col items-center">
            {/* Progress Bar */}
-           <div className="w-full h-2 bg-slate-800 rounded-full mb-8 overflow-hidden cursor-pointer">
+           <div className="w-full h-2 bg-slate-800 rounded-full mb-8 overflow-hidden cursor-pointer" aria-label="Audio playback progress bar">
               <div 
                 className="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-100 ease-linear"
                 style={{ width: `${progress}%` }}
+                role="progressbar"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Current playback position"
               />
            </div>
 
@@ -302,6 +309,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
                   onClick={onReset}
                   className="p-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
                   title="New Generation"
+                  aria-label="Start a new generation"
                 >
                   <RefreshCw size={24} />
                 </button>
@@ -309,6 +317,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
                 <button 
                   onClick={togglePlay}
                   className="p-6 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-full shadow-lg hover:shadow-amber-500/20 transition-all transform hover:scale-105"
+                  aria-label={isPlaying ? "Pause audio" : "Play audio"}
                 >
                   {isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
                 </button>
@@ -317,6 +326,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
                   onClick={handleDownload}
                   className="p-3 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-full transition-colors"
                   title="Download WAV"
+                  aria-label="Download audio as WAV"
                 >
                   <Download size={24} />
                 </button>
@@ -328,7 +338,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioChunks, mimeType, onRese
            </div>
            
            <div className="mt-6 flex items-center space-x-2 text-slate-500 text-xs uppercase tracking-widest">
-             <Volume2 size={12} />
+             <Volume2 size={12} aria-hidden="true" />
              <span>Studio Quality • 24kHz PCM</span>
            </div>
         </div>

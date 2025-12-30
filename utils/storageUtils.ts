@@ -3,11 +3,29 @@ import { AppSettings } from '../types';
 
 const SETTINGS_KEY = 'kontho_global_settings';
 
+// Define model options for dropdowns
+export const TTS_MODEL_OPTIONS = [
+  { value: 'gemini-2.5-flash-preview-tts', label: 'Gemini 2.5 Flash TTS (Recommended)' },
+  { value: 'gemini-2.5-flash-tts', label: 'Gemini 2.5 Flash TTS (Stable)' },
+  { value: 'custom', label: 'Custom Model ID...' },
+];
+
+export const SCRIPT_MODEL_OPTIONS = [
+  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview (Recommended)' },
+  { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Legacy)' },
+  { value: 'custom', label: 'Custom Model ID...' },
+];
+
+export const LIVE_MODEL_OPTIONS = [
+  { value: 'gemini-2.5-flash-native-audio-preview-09-2025', label: 'Gemini 2.5 Flash Native Audio (Recommended)' },
+  { value: 'custom', label: 'Custom Model ID...' },
+];
+
 export const DEFAULT_SETTINGS: AppSettings = {
-  apiKey: '', // Will fall back to process.env in service if empty
   models: {
     tts: 'gemini-2.5-flash-preview-tts',
-    script: 'gemini-2.0-flash',
+    script: 'gemini-3-flash-preview',
     live: 'gemini-2.5-flash-native-audio-preview-09-2025'
   }
 };
@@ -37,9 +55,7 @@ export const saveSettings = (settings: AppSettings) => {
 };
 
 export const getEffectiveApiKey = (): string => {
-  const settings = getSettings();
-  if (settings.apiKey && settings.apiKey.trim() !== '') {
-    return settings.apiKey;
-  }
+  // As per guidelines, API key must exclusively come from process.env.API_KEY
+  // The app should not ask the user for it.
   return process.env.API_KEY || '';
 };

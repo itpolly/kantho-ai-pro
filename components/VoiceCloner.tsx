@@ -108,7 +108,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
 - Specific Style: ${fineTuning.style || 'None'}
 `;
     const fullInstruction = cloneResult.instruction + modifiers;
-    const previewText = "Assalamu Alaikum. This is a preview of your custom voice clone.";
+    const previewText = "আসসালামু আলাইকুম। এটি আপনার কাস্টম ভয়েস ক্লোনের একটি প্রিভিউ।"; // Bengali: "Assalamu Alaikum. This is a preview of your custom voice clone."
 
     try {
       const stream = await generateSpeechStream({
@@ -182,14 +182,14 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
         <div className="bg-slate-800/50 p-5 border-b border-slate-700 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
-              <Wand2 size={24} />
+              <Wand2 size={24} aria-hidden="true" />
             </div>
             <div>
               <h3 className="font-bold text-xl font-display text-slate-100">Voice Lab</h3>
               <p className="text-xs text-slate-400">Clone, Fine-Tune, and Create Custom Personas</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors" aria-label="Close Voice Lab">
             <X size={24} />
           </button>
         </div>
@@ -211,7 +211,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                   {file ? (
                      <div className="flex flex-col items-center gap-4 w-full">
                         <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-                          <Activity size={32} />
+                          <Activity size={32} aria-hidden="true" />
                         </div>
                         <div className="text-center">
                           <p className="font-medium text-lg text-slate-200">{file.name}</p>
@@ -228,10 +228,11 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                                  }
                                }}
                                className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 text-amber-500 transition-colors"
+                               aria-label="Play uploaded audio"
                              >
                                <Play size={16} fill="currentColor" />
                              </button>
-                             <div className="h-1 bg-slate-800 rounded-full flex-1 overflow-hidden">
+                             <div className="h-1 bg-slate-800 rounded-full flex-1 overflow-hidden" aria-hidden="true">
                                <div className="h-full w-1/2 bg-slate-600"></div>
                              </div>
                              <audio ref={uploadAudioRef} src={uploadPreviewUrl} className="hidden" />
@@ -241,6 +242,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                         <button 
                           onClick={() => { setFile(null); setUploadPreviewUrl(null); }}
                           className="text-sm text-red-400 hover:text-red-300 font-medium py-2"
+                          aria-label="Change uploaded audio file"
                         >
                           Change File
                         </button>
@@ -248,13 +250,13 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                   ) : (
                     <>
                       <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:scale-110 transition-transform">
-                        <Upload size={32} />
+                        <Upload size={32} aria-hidden="true" />
                       </div>
                       <label className="cursor-pointer group">
                         <span className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg border border-slate-700 group-hover:border-amber-500/50">
                           Select Audio File
                         </span>
-                        <input type="file" className="hidden" accept="audio/*" onChange={handleFileChange} />
+                        <input type="file" className="hidden" accept="audio/*" onChange={handleFileChange} aria-label="Upload audio file" />
                       </label>
                       <p className="text-xs text-slate-500">Supported: MP3, WAV (Max 5MB)</p>
                     </>
@@ -270,15 +272,16 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                     ? 'bg-slate-800 text-slate-600 cursor-not-allowed' 
                     : 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-500 hover:to-orange-500 hover:shadow-amber-500/20 hover:scale-[1.01]'
                 }`}
+                aria-label={isAnalyzing ? "Analyzing voice" : "Analyze and clone voice"}
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2 className="animate-spin" size={24} />
+                    <Loader2 className="animate-spin" size={24} aria-hidden="true" />
                     <span>Analyzing Voice DNA...</span>
                   </>
                 ) : (
                   <>
-                    <Wand2 size={24} />
+                    <Wand2 size={24} aria-hidden="true" />
                     <span>Analyze & Clone</span>
                   </>
                 )}
@@ -292,7 +295,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
               <div className="space-y-6">
                 <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-6 space-y-4">
                   <h4 className="text-slate-400 text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                    <Activity size={16} />
+                    <Activity size={16} aria-hidden="true" />
                     Analysis Results
                   </h4>
                   
@@ -319,6 +322,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                           readOnly
                           value={cloneResult.instruction}
                           className="w-full h-24 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-400 mt-2 resize-none focus:outline-none"
+                          aria-label="Original instructions from voice analysis"
                        />
                     </div>
                   </div>
@@ -329,9 +333,10 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                   <input 
                     type="text" 
                     value={cloneResult.name}
-                    onChange={(e) => setCloneResult({...cloneResult, name: e.target.value})}
+                    onChange={(e) => setCloneResult(prev => prev ? {...prev, name: e.target.value} : null)}
                     placeholder="Enter voice name..."
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all"
+                    aria-label="Name for your custom voice persona"
                   />
                 </div>
               </div>
@@ -339,10 +344,10 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
               {/* Right Column: Fine Tuning Studio */}
               <div className="space-y-6">
                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-6 shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" aria-hidden="true"></div>
                     
                     <h4 className="text-amber-500 text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                      <Sliders size={16} />
+                      <Sliders size={16} aria-hidden="true" />
                       Fine-Tuning Studio
                     </h4>
 
@@ -353,11 +358,11 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                        <div className="space-y-2">
                          <div className="flex justify-between">
                             <label className="text-sm text-slate-300 flex items-center gap-2">
-                              <Music size={14} className="text-slate-500" /> Pitch & Tone
+                              <Music size={14} className="text-slate-500" aria-hidden="true" /> Pitch & Tone
                             </label>
-                            <span className="text-xs text-amber-500/80">{fineTuning.pitch}</span>
+                            <span className="text-xs text-amber-500/80" aria-live="polite">{fineTuning.pitch}</span>
                          </div>
-                         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
+                         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800" role="radiogroup" aria-label="Select pitch and tone">
                            {PITCH_OPTIONS.map((opt) => (
                              <button
                                key={opt}
@@ -367,6 +372,9 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                                    ? 'bg-slate-800 text-amber-500 shadow-sm border border-slate-700' 
                                    : 'text-slate-500 hover:text-slate-300'
                                }`}
+                               role="radio"
+                               aria-checked={fineTuning.pitch === opt}
+                               aria-label={`Set pitch to ${opt}`}
                              >
                                {opt}
                              </button>
@@ -378,11 +386,11 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                        <div className="space-y-2">
                          <div className="flex justify-between">
                             <label className="text-sm text-slate-300 flex items-center gap-2">
-                              <User size={14} className="text-slate-500" /> Apparent Age
+                              <User size={14} className="text-slate-500" aria-hidden="true" /> Apparent Age
                             </label>
-                            <span className="text-xs text-amber-500/80">{fineTuning.age}</span>
+                            <span className="text-xs text-amber-500/80" aria-live="polite">{fineTuning.age}</span>
                          </div>
-                         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
+                         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800" role="radiogroup" aria-label="Select apparent age">
                            {AGE_OPTIONS.map((opt) => (
                              <button
                                key={opt}
@@ -392,6 +400,9 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                                    ? 'bg-slate-800 text-amber-500 shadow-sm border border-slate-700' 
                                    : 'text-slate-500 hover:text-slate-300'
                                }`}
+                               role="radio"
+                               aria-checked={fineTuning.age === opt}
+                               aria-label={`Set age to ${opt}`}
                              >
                                {opt}
                              </button>
@@ -401,13 +412,15 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
 
                        {/* Style Input */}
                        <div className="space-y-2">
-                          <label className="text-sm text-slate-300">Style Nuances (Optional)</label>
+                          <label htmlFor="style-nuances-input" className="text-sm text-slate-300">Style Nuances (Optional)</label>
                           <input 
+                            id="style-nuances-input"
                             type="text"
                             value={fineTuning.style}
                             onChange={(e) => setFineTuning({...fineTuning, style: e.target.value})}
                             placeholder="e.g. Raspy, Whispery, British Accent..."
                             className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-amber-500 outline-none"
+                            aria-label="Optional style nuances for the voice"
                           />
                        </div>
                     </div>
@@ -418,7 +431,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                         <label className="text-xs font-bold text-slate-500 uppercase">Audio Preview</label>
                         {generatedPreviewUrl && (
                           <span className="text-[10px] text-green-500 flex items-center gap-1">
-                            <Check size={10} /> Ready
+                            <Check size={10} aria-hidden="true" /> Ready
                           </span>
                         )}
                       </div>
@@ -428,8 +441,9 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                           onClick={handleGeneratePreview}
                           disabled={isPreviewGenerating}
                           className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                          aria-label={isPreviewGenerating ? "Generating sample" : "Generate sample audio"}
                         >
-                          {isPreviewGenerating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                          {isPreviewGenerating ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={14} aria-hidden="true" />}
                           Generate Sample
                         </button>
 
@@ -451,6 +465,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                                ? 'bg-amber-500 text-slate-900 hover:bg-amber-400 cursor-pointer shadow-lg' 
                                : 'bg-slate-800 text-slate-600 cursor-not-allowed'}
                           `}
+                          aria-label={isPlayingPreview ? "Pause preview audio" : "Play preview audio"}
                         >
                           {isPlayingPreview ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
                         </button>
@@ -460,6 +475,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                            onPlay={() => setIsPlayingPreview(true)}
                            onPause={() => setIsPlayingPreview(false)}
                            onEnded={() => setIsPlayingPreview(false)}
+                           aria-hidden="true"
                         />
                       </div>
                     </div>
@@ -470,14 +486,16 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onClose, onCloneSuccess }) =>
                     <button 
                       onClick={() => setCloneResult(null)}
                       className="flex-1 py-3.5 rounded-xl border border-slate-700 text-slate-400 hover:bg-slate-800 font-medium transition-all"
+                      aria-label="Go back to audio upload"
                     >
                       Back
                     </button>
                     <button 
                       onClick={handleSave}
                       className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                      aria-label="Save custom voice persona"
                     >
-                      <Check size={18} />
+                      <Check size={18} aria-hidden="true" />
                       Save Custom Voice
                     </button>
                  </div>

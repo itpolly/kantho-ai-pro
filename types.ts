@@ -50,7 +50,6 @@ export interface VoiceAnalysisResult {
 }
 
 export interface AppSettings {
-  apiKey: string;
   models: {
     tts: string;
     script: string;

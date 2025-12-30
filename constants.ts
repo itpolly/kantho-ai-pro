@@ -136,13 +136,12 @@ Tone: Melodic, deep, and artistic.`,
 Task: Simulate a lively, intellectual conversation between a Host and a Guest.
 
 Speaker Configuration:
-- Speaker 1 (Host): Uses a Deep, Charismatic Male Voice (Charon). Tone is warm, inquisitive, and professional.
-- Speaker 2 (Guest): Uses a Soft, Clear Female Voice (Zephyr). Tone is enthusiastic, expert, and explanatory.
+- Speaker 1 (Host): "Charon" (Deep Male, lower vocal register). Tone: Grounded, warm, inquisitive, and steady (The Anchor).
+- Speaker 2 (Guest): "Zephyr" (Soft Female, higher vocal register). Tone: Bright, enthusiastic, faster-paced, and expressive (The Expert).
 
 Guidelines:
-- Create a seamless "Radio FM" vibe.
-- Speaker 1 guides the flow. Speaker 2 provides detailed answers.
-- Overlap feelings of agreement (e.g., "Hmm", "Exactly") where appropriate for realism.`,
+- **Contrast Strategy**: The Host provides the "Bass" foundation; the Guest provides the "Treble" energy. The contrasting vocal registers enhance clarity and character distinction, crucial for engaging dialogue.
+- Overlap feelings of agreement (e.g., "Hmm", "Right") where appropriate for realism.`,
     sampleText: `Speaker 1: আসসালামু আলাইকুম ও সুপ্রিয় শ্রোতা, "ফিউচার টেক" পডকাস্টে আপনাদের স্বাগত! আজ আমাদের স্টুডিওতে আছেন বিশিষ্ট বিজ্ঞানী, ডঃ নুসরাত। কেমন আছেন?
 
 Speaker 2: ওয়ালাইকুম আসসালাম! ধন্যবাদ! আমি চমৎকার আছি। আপনাদের এই সুন্দর আয়োজনে আসতে পেরে আমার খুব ভালো লাগছে।
@@ -158,30 +157,27 @@ Speaker 2: অবশ্যই! দেখুন, জলবায়ু পরি�
   {
     id: 'advertisement_promo',
     name: '📢 Commercial (Bigyapon)',
-    instruction: `Role: You are recording a radio commercial for a tech product.
-Task: Perform a persuasive, fast-paced dialogue between a Customer and a Salesperson.
+    instruction: `Role: You are recording a high-energy radio commercial.
+Task: Perform a punchy dialogue between a Confused Customer and an Energetic Announcer.
 
 Speaker Configuration:
-- Speaker 1 (Customer): Uses a Clear, Young Male Voice (Puck). Tone is curious, slightly confused, then excited.
-- Speaker 2 (Salesperson): Uses a Calm, Professional Female Voice (Kore). Tone is confident, reassuring, and solution-oriented.
+- Speaker 1 (Customer): "Puck" (Young Male, mid-to-high register). Tone: Anxious, fast, slightly higher pitched, struggling with a problem.
+- Speaker 2 (Announcer): "Fenrir" (Intense Male, deep, resonant register). Tone: Deep, loud, confident, "Salesy", and solution-oriented.
 
 Guidelines:
-- High energy and punchy delivery.
-- Clear distinction between the problem (Customer) and the solution (Salesperson).
-- End with a strong call to action vibe.`,
-    sampleText: `Speaker 1: উফ! আমার পুরনো ফোনটা নিয়ে আর পারা যাচ্ছে না। এত স্লো যে কাজই করা যায় না! ভালো কোনো অপশন কি নেই?
-
-Speaker 2: চিন্তা কেন স্যার? চলে আসুন "গ্যাজেট ওয়ার্ল্ড"-এ! আমাদের কাছে আছে লেটেস্ট স্মার্টফোন, সুপার ফাস্ট প্রসেসর সহ।
-
-Speaker 1: তাই নাকি? কিন্তু দাম? আমার বাজেট তো সীমিত।
-
-Speaker 2: একদম ভাববেন না! ধামাকা অফারে এখন পাচ্ছেন ৪০% ডিসকাউন্ট! সাথে ইএমআই সুবিধা তো আছেই।
-
-Speaker 1: বাহ্! দারুণ তো! আমি এখনই আসছি!`,
+- **Contrast Strategy**: Speaker 1 is the "Problem" (Weak/Fast). Speaker 2 is the "Solution" (Strong/Punchy). The sharp contrast between the customer's relatable vulnerability and the announcer's commanding, solution-oriented delivery creates a memorable ad.
+- High energy and zero dead air.`,
     isDefault: true,
     isMultiSpeaker: true,
     defaultPacing: 'Fast',
     defaultEmotion: 'Excited',
+    sampleText: `Speaker 1: (Anxious) উফ! আমার পুরনো ফোনটা নিয়ে আর পারা যাচ্ছে না। গেম খেললেই হ্যাং করে!
+
+Speaker 2: (Energetic) আর চিন্তা নেই! চলে আসুন "গ্যাজেট ওয়ার্ল্ড"-এ! আমরা নিয়ে এসেছি শহরের সবচেয়ে ফাস্টেস্ট গেমিং ফোন!
+
+Speaker 1: (Surprised) তাই নাকি? কিন্তু পকেটের অবস্থা তো টাইট!
+
+Speaker 2: (Confident) একদম ভাববেন না! ধামাকা অফারে এখন পাচ্ছেন ৪০% ফ্ল্যাট ডিসকাউন্ট! দেরি কিসের? আজই আসুন!`,
   },
   {
     id: 'natika_drama',
@@ -190,13 +186,12 @@ Speaker 1: বাহ্! দারুণ তো! আমি এখনই আস�
 Task: Deliver the dialogue with strong cinematic emotion and character acting.
 
 Speaker Configuration:
-- Speaker 1 (The Antagonist/Angry): Uses an Intense, Fast Male Voice (Fenrir). Tone is aggressive, loud, or commanding.
-- Speaker 2 (The Protagonist/Calm): Uses a Soothing, Composed Female Voice (Kore). Tone is pleading, scared, or trying to de-escalate.
+- Speaker 1 (The Antagonist/Angry): "Fenrir" (Intense Male, powerful low register). Tone: Aggressive, loud, commanding, and rough.
+- Speaker 2 (The Protagonist/Calm): "Kore" (Calm Female, gentle mid-register). Tone: Pleading, soft, scared, or trying to de-escalate.
 
 Guidelines:
-- Focus on the emotional contrast between the two voices.
-- Use dramatic pauses and breathiness where appropriate to convey tension.
-- This is NOT a reading; this is ACTING.`,
+- **Contrast Strategy**: Extreme emotional distance. One pushes, the other pulls back. This pairing exploits extreme vocal and emotional registers to maximize dramatic tension and character depth.
+- Use dramatic pauses and breathiness where appropriate to convey tension.`,
     sampleText: `Speaker 1: (Angry) আমি তোমাকে শেষবারের মতো সাবধান করছি! এই জমির দলিলটা আমাকে দিয়ে দাও, নইলে ফলাফল ভালো হবে না!
 
 Speaker 2: (Scared) দেখুন, দয়া করুন! এটা আমার বাবার শেষ সম্বল। এটা আমি কিছুতেই হাতছাড়া করতে পারব না।

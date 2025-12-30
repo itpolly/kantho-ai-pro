@@ -65,7 +65,7 @@ const App: React.FC = () => {
       }
       
       if (collectedChunks.length === 0) {
-        throw new Error("The model returned no audio data. The request may have been blocked by safety filters.");
+        throw new Error("The model returned no audio data. The request may have been blocked by safety filters or an internal error.");
       }
 
       setAudioChunks(collectedChunks);
@@ -89,13 +89,14 @@ const App: React.FC = () => {
       if (
         errCode === 429 || 
         errStr.includes('429') || 
-        errStr.includes('quota')
+        errStr.includes('quota') ||
+        errStr.includes('resource_exhausted')
       ) {
         msg = '⚠️ Quota Exceeded: The API rate limit has been reached. Please wait a minute before trying again.';
       } else if (errStr.includes('safety')) {
         msg = 'Safety Filter: The generated content was blocked. Please adjust your text or persona.';
-      } else if (errStr.includes('key')) {
-        msg = '🔑 API Key Error: Please check your configuration in Settings.';
+      } else if (errCode === 404 || errStr.includes('not_found')) {
+        msg = '🌐 Model Not Found / Permissions Error: This typically means the API Key you\'re using does not have access to the selected model, or the GenAI service is not enabled for your project, or billing is not configured. Please check your Google Cloud project settings.';
       } else {
          msg = `Generation Failed: ${getErrorString(error).substring(0, 100)}...`;
       }
@@ -121,7 +122,8 @@ const App: React.FC = () => {
         case 'natika_drama':
           primary = VoiceName.Fenrir; secondary = VoiceName.Kore; break;
         case 'advertisement_promo':
-           primary = VoiceName.Puck; secondary = VoiceName.Kore; break;
+           // Puck (Customer) vs Fenrir (High Energy Announcer)
+           primary = VoiceName.Puck; secondary = VoiceName.Fenrir; break;
         case 'podcast_interview':
            primary = VoiceName.Charon; secondary = VoiceName.Zephyr; break;
       }

@@ -21,7 +21,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
   const outputContextRef = useRef<AudioContext | null>(null);
   const audioWorkletNodeRef = useRef<ScriptProcessorNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const sessionRef = useRef<any>(null); 
+  const sessionPromiseRef = useRef<Promise<any> | null>(null); // Store the promise
   const nextStartTimeRef = useRef<number>(0);
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
 
@@ -61,7 +61,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
     
     try {
       const apiKey = getEffectiveApiKey();
-      if (!apiKey) throw new Error("API Key is missing. Please configure it in Settings.");
+      if (!apiKey) throw new Error("GenAI Key is missing. Please ensure process.env.API_KEY is configured.");
       
       const settings = getSettings();
       const model = settings.models.live;
@@ -119,11 +119,12 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
               const pcm16 = float32ToPcm16(inputData);
               const base64Audio = encodeBase64(new Uint8Array(pcm16.buffer));
 
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({
+              sessionPromiseRef.current?.then(session => { // Use sessionPromiseRef
+                const pcmBlob = {
+                  data: base64Audio,
                   mimeType: 'audio/pcm;rate=16000',
-                  data: base64Audio
-                });
+                };
+                session.sendRealtimeInput({ media: pcmBlob });
               });
             };
           },
@@ -146,24 +147,24 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
           onerror: (err) => {
             console.error("Session Error", err);
             setStatus('error');
-            setErrorDetails("Connection error. Check API Key or Quota.");
+            setErrorDetails("Connection error. Check GenAI Key or Quota.");
             disconnect();
           }
         }
       });
       
-      sessionRef.current = sessionPromise;
+      sessionPromiseRef.current = sessionPromise; // Store the promise
 
     } catch (e: any) {
       console.error("Connection Failed", e);
       setStatus('error');
-      setErrorDetails(e.message || "Failed to connect to microphone or API.");
+      setErrorDetails(e.message || "Failed to connect to microphone or GenAI service.");
     }
   };
 
   const disconnect = () => {
-    if (sessionRef.current) {
-       sessionRef.current.then((s: any) => {
+    if (sessionPromiseRef.current) { // Use sessionPromiseRef
+       sessionPromiseRef.current.then((s: any) => {
          if (s.close) s.close();
        }).catch(() => {});
     }
@@ -195,7 +196,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} />
              <span className="font-bold text-slate-200">Kontho Live (Bengali)</span>
            </div>
-           <button onClick={onClose} className="text-slate-400 hover:text-white"><Activity size={20} /></button>
+           <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close live conversation"><Activity size={20} /></button>
         </div>
 
         {/* Visualizer Area */}
@@ -209,17 +210,17 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
                absolute inset-0 rounded-full border-2 border-amber-500/30
                ${isConnected ? 'animate-ping opacity-20' : 'hidden'}
              `} />
-             <Bot size={64} className={isConnected ? "text-amber-500" : "text-slate-600"} />
+             <Bot size={64} className={isConnected ? "text-amber-500" : "text-slate-600"} aria-hidden="true" />
            </div>
 
            <div className="text-center space-y-2">
-              <h2 className={`text-2xl font-light ${status === 'error' ? 'text-red-400' : 'text-slate-100'}`}>
+              <h2 className={`text-2xl font-light ${status === 'error' ? 'text-red-400' : 'text-slate-100'}`} aria-live="polite">
                 {status === 'connecting' && "Connecting..."}
                 {status === 'connected' && "Listening..."}
                 {status === 'idle' && "Ready to Chat"}
                 {status === 'error' && "Connection Failed"}
               </h2>
-              <p className="text-sm text-slate-500 max-w-[250px] mx-auto">
+              <p className="text-sm text-slate-500 max-w-[250px] mx-auto" aria-live="polite">
                  {status === 'error' ? errorDetails : (status === 'connected' ? "Speak naturally in Bengali" : "Start a real-time conversation")}
               </p>
            </div>
@@ -232,6 +233,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
                onClick={connectToLive}
                disabled={status === 'connecting'}
                className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-all"
+               aria-label="Start conversation"
              >
                {status === 'connecting' ? <Loader2 className="animate-spin" /> : <Mic size={24} />}
                Start Conversation
@@ -241,16 +243,18 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
                 <button 
                    onClick={() => setIsMicOn(!isMicOn)}
                    className={`p-4 rounded-full transition-all ${isMicOn ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-red-500/20 text-red-500'}`}
+                   aria-label={isMicOn ? "Mute microphone" : "Unmute microphone"}
                 >
                    {isMicOn ? <Mic size={28} /> : <MicOff size={28} />}
                 </button>
                 
-                <div className="h-16 w-32 bg-slate-900 rounded-xl flex items-center justify-center gap-1 overflow-hidden border border-slate-800">
+                <div className="h-16 w-32 bg-slate-900 rounded-xl flex items-center justify-center gap-1 overflow-hidden border border-slate-800" aria-label="Microphone volume level indicator">
                    {[1,2,3,4,5].map(i => (
                      <div 
                        key={i} 
                        className="w-2 bg-amber-500 rounded-full transition-all duration-75" 
                        style={{ height: `${Math.max(4, volumeLevel * Math.random() + 10)}%` }} 
+                       aria-hidden="true"
                      />
                    ))}
                 </div>
@@ -258,6 +262,7 @@ const LiveInterface: React.FC<LiveInterfaceProps> = ({ onClose }) => {
                 <button 
                    onClick={disconnect}
                    className="p-4 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg transition-all"
+                   aria-label="End conversation"
                 >
                    <PhoneOff size={28} />
                 </button>
